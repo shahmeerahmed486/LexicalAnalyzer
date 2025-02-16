@@ -1,0 +1,6 @@
+main() {
+    deci pi = 3.14159;
+    int radius = 5;
+    deci area = pi * radius * radius;
+    out(area);
+}
