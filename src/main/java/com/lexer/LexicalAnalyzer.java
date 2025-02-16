@@ -24,7 +24,7 @@ public class LexicalAnalyzer {
         dfas.put("OPERATOR", buildOperatorDFA());
 
         keywords = new HashSet<>(Arrays.asList(
-                "main", "if", "elif", "else", "out", "in", "deci", "int", "char", "bool"
+                "main", "if", "elif", "else", "out", "in", "deci", "int", "char", "bool", "return"
         ));
 
         symbols = new HashSet<>(Arrays.asList("{", "}", "(", ")", ";", ","));
