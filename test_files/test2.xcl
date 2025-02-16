@@ -1,0 +1,14 @@
+deci square(deci x) {
+    return x * x;
+}
+
+deci half(deci x) {
+    return x / 2;
+}
+
+main() {
+    deci num = 5.5;
+    deci result1 = square(num);
+    deci result2 = half(result1);
+    out(result2);
+}
