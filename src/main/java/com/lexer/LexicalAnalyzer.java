@@ -13,6 +13,7 @@ public class LexicalAnalyzer {
     private boolean insideFunction = false;  // Track if currently inside a function
     private String currentFunction = "";     // Stores the current function name
     private String lastKeyword = "";         // Stores the last encountered keyword
+    private String secondLastKeyword = "";
     private String lastToken = "";           // Stores the last encountered token
 
     public LexicalAnalyzer() {
@@ -20,11 +21,13 @@ public class LexicalAnalyzer {
         dfas.put("IDENTIFIER", buildIdentifierDFA());
         dfas.put("INTEGER", buildIntegerDFA());
         dfas.put("DECIMAL", buildDecimalDFA());
+        dfas.put("CHAR", buildCharDFA());
+        dfas.put("STRING", buildStringDFA());
         dfas.put("BOOLEAN", buildBooleanDFA());
         dfas.put("OPERATOR", buildOperatorDFA());
 
         keywords = new HashSet<>(Arrays.asList(
-                "main", "if", "elif", "else", "out", "in", "deci", "int", "char", "bool", "return"
+                "if", "elif", "else", "out", "in", "deci", "int", "char", "bool", "str", "return", "def"
         ));
 
         symbols = new HashSet<>(Arrays.asList("{", "}", "(", ")", ";", ","));
@@ -33,9 +36,9 @@ public class LexicalAnalyzer {
         symbolTable = new SymbolTable();
 
         lastKeyword = "";  // Initialize tracking variables
+        secondLastKeyword = "";
         lastToken = "";
     }
-
 
     private DFA buildIdentifierDFA() {
         DFA identifierDFA = new DFA(0);
@@ -86,6 +89,37 @@ public class LexicalAnalyzer {
         return decimalDFA;
     }
 
+    private DFA buildCharDFA() {
+        DFA charDFA = new DFA(0);
+        charDFA.addTransition(0, '\'', 1); // Start of char literal
+        charDFA.addTransition(1, '\\', 2); // Escape sequence for char
+        for (char c = 32; c <= 126; c++) { // Printable characters (non-control)
+            charDFA.addTransition(1, c, 1); // Regular characters inside the char
+        }
+        charDFA.addTransition(2, '\'', 3); // Escape sequence for single quote
+        charDFA.addTransition(2, '\\', 2); // Escaped backslash
+        charDFA.addTransition(1, '\'', 4); // End of char literal
+        charDFA.addFinalState(4); // End of char literal
+
+        return charDFA;
+    }
+
+    private DFA buildStringDFA() {
+        DFA stringDFA = new DFA(0);
+        stringDFA.addTransition(0, '"', 1);  // Start string with "
+
+        // Allow all printable characters except for the ending quote (")
+        for (char c = 32; c <= 126; c++) {
+            if (c != '"') {  // Exclude the double quote to allow it only at the end
+                stringDFA.addTransition(1, c, 1);
+            }
+        }
+
+        stringDFA.addTransition(1, '"', 2); // End string with "
+        stringDFA.addFinalState(2);
+        return stringDFA;
+    }
+
     private DFA buildBooleanDFA() {
         DFA boolDFA = new DFA(0);
         String[] booleans = {"true", "false"};
@@ -110,6 +144,7 @@ public class LexicalAnalyzer {
         return operatorDFA;
     }
 
+    // Updated analyzeToken method
     public void analyzeToken(String token, int lineNumber) {
         if (symbols.contains(token)) {
             tokens.add(new Token("SYMBOL", token, lineNumber));
@@ -126,35 +161,45 @@ public class LexicalAnalyzer {
         if (dfas.get("IDENTIFIER").validate(token)) {
             if (keywords.contains(token)) {
                 tokens.add(new Token("KEYWORD", token, lineNumber));
-                lastKeyword = token; // Track last keyword to detect functions
+                secondLastKeyword = lastKeyword; // Update second last keyword
+                lastKeyword = token; // Update last keyword
+                lastToken=token;
                 return;
             }
 
-            // **Detect Function Definition**
-            if (lastKeyword.equals("deci") || lastKeyword.equals("int") || lastKeyword.equals("char") || lastKeyword.equals("bool")) {
+            // Detect Function Definition by looking for 'def' followed by a datatype and function name
+            if (secondLastKeyword.equals("def") && (lastKeyword.equals("deci") || lastKeyword.equals("int") ||
+                    lastKeyword.equals("char") || lastKeyword.equals("bool"))) {
                 // This is a function definition
                 currentFunction = token;
                 symbolTable.insert(token, "FUNCTION", "global", lastKeyword);
                 tokens.add(new Token("FUNCTION", token, lineNumber));
                 lastKeyword = ""; // Reset after function definition
+                secondLastKeyword = ""; // Reset second last keyword
+                insideFunction=true;
+
                 return;
             }
 
-            // **Detect Function Parameter**
-            if (insideFunction && lastToken.equals("(")) {
-                // Function parameters are local variables
-                tokens.add(new Token("PARAMETER", token, lineNumber));
-                symbolTable.insert(token, "UNKNOWN", currentFunction, "");
-                return;
-            }
+            // Detect Function Parameter (Identifiers after a '(' and inside a function)
+//            if (insideFunction && lastToken.equals("(")) {
+//                // Function parameters are local variables
+//                tokens.add(new Token("PARAMETER", token, lineNumber));
+//                symbolTable.insert(token, "PARAMETER", currentFunction, "");
+//                return;
+//            }
 
-            // **Regular Identifier**
+            // Regular Identifier
             String scope = insideFunction ? currentFunction : "global";
+            System.out.println(scope+" "+token);
+            if (!symbolTable.exists(token, scope)) {
+                String type = getSymbolType();
+
+                symbolTable.insert(token, type, scope, "");
+            }
+
             tokens.add(new Token("IDENTIFIER", token, lineNumber));
 
-            if (!symbolTable.exists(token)) {
-                symbolTable.insert(token, "UNKNOWN", scope, "");
-            }
             return;
         }
 
@@ -170,9 +215,27 @@ public class LexicalAnalyzer {
             return;
         }
 
+        if (dfas.get("CHAR").validate(token)) {
+            tokens.add(new Token("CHAR", token, lineNumber));
+            symbolTable.insert(token, "CHAR", insideFunction ? currentFunction : "global", token);
+            return;
+        }
+
+        if (dfas.get("STRING").validate(token)) {
+            tokens.add(new Token("STRING", token, lineNumber));
+            symbolTable.insert(token, "STRING", insideFunction ? currentFunction : "global", token);
+            return;
+        }
+
         if (dfas.get("BOOLEAN").validate(token)) {
             tokens.add(new Token("BOOLEAN", token, lineNumber));
             symbolTable.insert(token, "BOOLEAN", insideFunction ? currentFunction : "global", token);
+            return;
+        }
+
+        // Detect Operators using the operator DFA
+        if (dfas.get("OPERATOR").validate(token)) {
+            tokens.add(new Token("OPERATOR", token, lineNumber));
             return;
         }
 
@@ -180,7 +243,24 @@ public class LexicalAnalyzer {
         lastToken = token; // Store last token for function parameter detection
     }
 
+    private String getSymbolType() {
+        String type = "UNKNOWN";
 
+        if (lastToken.equals("deci") || lastToken.equals("int") ||
+                lastToken.equals("char") || lastToken.equals("bool") || lastToken.equals("str")) {
+
+            type = switch (lastToken) {
+                case "deci" -> "DECIMAL";
+                case "int" -> "INTEGER";
+                case "char" -> "CHARACTER";
+                case "bool" -> "BOOLEAN";
+                default -> "STRING";
+            };
+        }
+        return type;
+    }
+
+    // Updated processInput method to handle comments and tokenization more effectively
     public void processInput(String input) {
         Scanner scanner = new Scanner(input);
         boolean inMultiLineComment = false;
@@ -196,27 +276,61 @@ public class LexicalAnalyzer {
                 }
                 continue;
             }
+
             if (line.startsWith("/*")) {
                 if (!line.endsWith("*/")) {
                     inMultiLineComment = true;
                 }
                 continue;
             }
+
             if (line.contains("//")) {
                 line = line.substring(0, line.indexOf("//")).trim();
             }
+
             if (!line.isEmpty()) {
-                StringTokenizer tokenizer = new StringTokenizer(line, " {}(),;=+-*/%^<>!", true);
+                StringTokenizer tokenizer = new StringTokenizer(line, " {}(),;=+-*/%^<>\"", true);
+                List<String> tokensInLine = new ArrayList<>();
+
                 while (tokenizer.hasMoreTokens()) {
                     String token = tokenizer.nextToken().trim();
                     if (!token.isEmpty()) {
+                        tokensInLine.add(token);
+                    }
+                }
+
+                // Post-processing to handle string literals
+                List<Token> processedTokens = new ArrayList<>();
+                boolean inString = false;
+                StringBuilder currentStringLiteral = new StringBuilder();
+
+                for (String token : tokensInLine) {
+                    if (token.equals("\"")) {
+                        inString = !inString;
+                        if (!inString && currentStringLiteral.length() > 0) {
+                            processedTokens.add(new Token("STRING", currentStringLiteral.toString(), lineNumber));
+                            currentStringLiteral.setLength(0);
+                        }
+                    } else if (inString) {
+                        currentStringLiteral.append(token);
+                    } else {
                         analyzeToken(token, lineNumber);
                     }
                 }
+
+                tokens.addAll(processedTokens);
             }
         }
         scanner.close();
     }
+
+    public void printTokens() {
+        for (Token token : tokens) {
+            System.out.println(token);
+        }
+    }
+
+
 
     public static void main(String[] args) {
         LexicalAnalyzer analyzer = new LexicalAnalyzer();
@@ -250,6 +364,7 @@ public class LexicalAnalyzer {
         for (Token token : analyzer.tokens) {
             System.out.println(token);
         }
+        System.out.println("Number of Tokens: " + analyzer.tokens.size());
 
         analyzer.symbolTable.printTable();
     }
