@@ -1,14 +1,24 @@
-deci square(deci x) {
+char letter = 'A';  // Example char variable
+str message = "Hello, World!";  // Example string variable
+
+def deci square(deci x) {
     return x * x;
 }
 
-deci half(deci x) {
+def deci half(deci x) {
     return x / 2;
 }
 
-main() {
+def int main() {
     deci num = 5.5;
-    deci result1 = square(num);
-    deci result2 = half(result1);
-    out(result2);
+    deci ra = square(num);
+    deci rb = half(ra);
+    out(rb);
+
+    // Using char and string
+    out(letter);  // Outputting a char
+    out(message);  // Outputting a string
+
+    return 0;  // return a dummy value, since 'int' is expected
 }
+
