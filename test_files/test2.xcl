@@ -16,8 +16,8 @@ def int main() {
     out(rb);
 
     // Using char and string
-    out(letter);  // Outputting a char
-    out(message);  // Outputting a string
+    out(@letter);  // Outputting a char
+    out(@message);  // Outputting a string
 
     return 0;  // return a dummy value, since 'int' is expected
 }

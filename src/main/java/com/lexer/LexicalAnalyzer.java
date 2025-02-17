@@ -27,7 +27,7 @@ public class LexicalAnalyzer {
         dfas.put("OPERATOR", buildOperatorDFA());
 
         keywords = new HashSet<>(Arrays.asList(
-                "if", "elif", "else", "out", "in", "deci", "int", "char", "bool", "str", "return", "def"
+                "if", "elif", "else", "out", "in", "deci", "int", "char", "bool", "str", "return", "def","str"
         ));
 
         symbols = new HashSet<>(Arrays.asList("{", "}", "(", ")", ";", ","));
@@ -145,10 +145,27 @@ public class LexicalAnalyzer {
     }
 
     // Updated analyzeToken method
+// Updated analyzeToken method
     public void analyzeToken(String token, int lineNumber) {
+        // NEW: Check if the token represents a global variable (must start with '@')
+        if (token.startsWith("@")) {
+            String globalId = token.substring(1); // remove the '@'
+            if (dfas.get("IDENTIFIER").validate(globalId)) {
+                tokens.add(new Token("GLOBAL_IDENTIFIER", token, lineNumber));
+                // Global variables are always in the "global" scope.
+                if (!symbolTable.exists(globalId, "global")) {
+                    String type = getSymbolType();
+                    symbolTable.insert(globalId, type, "global", "");
+                }
+            } else {
+                tokens.add(new Token("UNKNOWN", token, lineNumber));
+            }
+            return;
+        }
+
+        // Existing processing for symbols:
         if (symbols.contains(token)) {
             tokens.add(new Token("SYMBOL", token, lineNumber));
-
             if (token.equals("{")) {
                 insideFunction = true;  // Now inside function scope
             } else if (token.equals("}")) {
@@ -158,12 +175,13 @@ public class LexicalAnalyzer {
             return;
         }
 
+        // Process identifiers and keywords
         if (dfas.get("IDENTIFIER").validate(token)) {
             if (keywords.contains(token)) {
                 tokens.add(new Token("KEYWORD", token, lineNumber));
                 secondLastKeyword = lastKeyword; // Update second last keyword
                 lastKeyword = token; // Update last keyword
-                lastToken=token;
+                lastToken = token;
                 return;
             }
 
@@ -176,33 +194,30 @@ public class LexicalAnalyzer {
                 tokens.add(new Token("FUNCTION", token, lineNumber));
                 lastKeyword = ""; // Reset after function definition
                 secondLastKeyword = ""; // Reset second last keyword
-                insideFunction=true;
-
+                insideFunction = true;
                 return;
             }
 
-            // Detect Function Parameter (Identifiers after a '(' and inside a function)
-//            if (insideFunction && lastToken.equals("(")) {
-//                // Function parameters are local variables
-//                tokens.add(new Token("PARAMETER", token, lineNumber));
-//                symbolTable.insert(token, "PARAMETER", currentFunction, "");
-//                return;
-//            }
-
             // Regular Identifier
+            // If we're in the global scope (i.e. not inside a function), you might want to enforce that
+            // all global variables MUST be preceded by '@'. Here, we assume that if an identifier
+            // (without '@') appears in global scope, it’s an error or might be treated differently.
             String scope = insideFunction ? currentFunction : "global";
-            System.out.println(scope+" "+token);
+            if (!insideFunction && !token.startsWith("@")) {
+                // Optionally, you could flag this as an error or warning.
+                // For now, we'll simply treat it as a global identifier without the '@'.
+            }
+
             if (!symbolTable.exists(token, scope)) {
                 String type = getSymbolType();
-
                 symbolTable.insert(token, type, scope, "");
             }
 
             tokens.add(new Token("IDENTIFIER", token, lineNumber));
-
             return;
         }
 
+        // The rest of your token type checks remain unchanged.
         if (dfas.get("INTEGER").validate(token)) {
             tokens.add(new Token("INTEGER", token, lineNumber));
             symbolTable.insert(token, "INTEGER", insideFunction ? currentFunction : "global", token);
@@ -242,6 +257,7 @@ public class LexicalAnalyzer {
         tokens.add(new Token("UNKNOWN", token, lineNumber));
         lastToken = token; // Store last token for function parameter detection
     }
+
 
     private String getSymbolType() {
         String type = "UNKNOWN";
@@ -308,7 +324,7 @@ public class LexicalAnalyzer {
                     if (token.equals("\"")) {
                         inString = !inString;
                         if (!inString && currentStringLiteral.length() > 0) {
-                            processedTokens.add(new Token("STRING", currentStringLiteral.toString(), lineNumber));
+                            analyzeToken("\""+currentStringLiteral.toString()+"\"",lineNumber);
                             currentStringLiteral.setLength(0);
                         }
                     } else if (inString) {
