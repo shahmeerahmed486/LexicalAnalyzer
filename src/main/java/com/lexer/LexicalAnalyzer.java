@@ -16,15 +16,25 @@ public class LexicalAnalyzer {
     private String secondLastKeyword = "";
     private String lastToken = "";           // Stores the last encountered token
 
+
     public LexicalAnalyzer() {
         dfas = new HashMap<>();
-        dfas.put("IDENTIFIER", buildIdentifierDFA());
-        dfas.put("INTEGER", buildIntegerDFA());
-        dfas.put("DECIMAL", buildDecimalDFA());
-        dfas.put("CHAR", buildCharDFA());
-        dfas.put("STRING", buildStringDFA());
-        dfas.put("BOOLEAN", buildBooleanDFA());
-        dfas.put("OPERATOR", buildOperatorDFA());
+        RegexToDFAConverter converter = new RegexToDFAConverter();
+
+        dfas.put("IDENTIFIER", converter.convertRegexToDFA("[a-z][a-z]*"));
+        dfas.put("INTEGER", converter.convertRegexToDFA("[0-9]+"));
+        dfas.put("DECIMAL", converter.convertRegexToDFA("[0-9]+\\.[0-9]{1,5}"));
+        dfas.put("CHAR", converter.convertRegexToDFA("'[a-zA-Z0-9]'"));
+        dfas.put("STRING", converter.convertRegexToDFA("\"(\\\\\"|[^\"])*\""));
+        dfas.put("BOOLEAN", converter.convertRegexToDFA("(true|false)"));
+        dfas.put("OPERATOR", converter.convertRegexToDFA("[+\\-*/%^=]"));
+//        dfas.put("IDENTIFIER", buildIdentifierDFA());
+//        dfas.put("INTEGER", buildIntegerDFA());
+//        dfas.put("DECIMAL", buildDecimalDFA());
+//        dfas.put("CHAR", buildCharDFA());
+//        dfas.put("STRING", buildStringDFA());
+//        dfas.put("BOOLEAN", buildBooleanDFA());
+//        dfas.put("OPERATOR", buildOperatorDFA());
 
         keywords = new HashSet<>(Arrays.asList(
                 "if", "elif", "else", "out", "in", "deci", "int", "char", "bool", "str", "return", "def","str"
@@ -38,6 +48,15 @@ public class LexicalAnalyzer {
         lastKeyword = "";  // Initialize tracking variables
         secondLastKeyword = "";
         lastToken = "";
+    }
+
+    public void debugDFA(String tokenType) {
+        DFA dfa = dfas.get(tokenType);
+        if (dfa != null) {
+            dfa.displayTable(); // Display the transition table for debugging
+        } else {
+            System.out.println("DFA for token type '" + tokenType + "' not found.");
+        }
     }
 
     private DFA buildIdentifierDFA() {
@@ -344,6 +363,11 @@ public class LexicalAnalyzer {
         for (Token token : tokens) {
             System.out.println(token);
         }
+    }
+    //for testing
+    public boolean validateToken(String tokenType, String value) {
+        DFA dfa = dfas.get(tokenType);
+        return dfa != null && dfa.validate(value);
     }
 
 

@@ -5,7 +5,7 @@ import java.util.*;
 class DFA {
     private final Map<String, Integer> transitionTable;
     private final Set<Integer> finalStates;
-    private final int startState;
+    public final int startState;
     private int currentState;
 
     public DFA(int startState) {
