@@ -25,16 +25,9 @@ public class LexicalAnalyzer {
         dfas.put("INTEGER", converter.convertRegexToDFA("[0-9]+"));
         dfas.put("DECIMAL", converter.convertRegexToDFA("[0-9]+\\.[0-9]{1,5}"));
         dfas.put("CHAR", converter.convertRegexToDFA("'[a-zA-Z0-9]'"));
-        dfas.put("STRING", converter.convertRegexToDFA("\"(\\\\\"|[^\"])*\""));
+        dfas.put("STRING", converter.convertRegexToDFA("\"[^\"]*\""));
         dfas.put("BOOLEAN", converter.convertRegexToDFA("(true|false)"));
         dfas.put("OPERATOR", converter.convertRegexToDFA("[+\\-*/%^=]"));
-//        dfas.put("IDENTIFIER", buildIdentifierDFA());
-//        dfas.put("INTEGER", buildIntegerDFA());
-//        dfas.put("DECIMAL", buildDecimalDFA());
-//        dfas.put("CHAR", buildCharDFA());
-//        dfas.put("STRING", buildStringDFA());
-//        dfas.put("BOOLEAN", buildBooleanDFA());
-//        dfas.put("OPERATOR", buildOperatorDFA());
 
         keywords = new HashSet<>(Arrays.asList(
                 "if", "elif", "else", "out", "in", "deci", "int", "char", "bool", "str", "return", "def","str"
@@ -45,7 +38,7 @@ public class LexicalAnalyzer {
         tokens = new ArrayList<>();
         symbolTable = new SymbolTable();
 
-        lastKeyword = "";  // Initialize tracking variables
+        lastKeyword = "";
         secondLastKeyword = "";
         lastToken = "";
     }
@@ -53,118 +46,13 @@ public class LexicalAnalyzer {
     public void debugDFA(String tokenType) {
         DFA dfa = dfas.get(tokenType);
         if (dfa != null) {
-            dfa.displayTable(); // Display the transition table for debugging
+            dfa.displayTable();
         } else {
             System.out.println("DFA for token type '" + tokenType + "' not found.");
         }
     }
 
-    private DFA buildIdentifierDFA() {
-        DFA identifierDFA = new DFA(0);
-        for (char c = 'a'; c <= 'z'; c++) {
-            identifierDFA.addTransition(0, c, 1);
-            identifierDFA.addTransition(1, c, 1);
-        }
-        identifierDFA.addFinalState(1);
-        return identifierDFA;
-    }
-
-    private DFA buildIntegerDFA() {
-        DFA intDFA = new DFA(0);
-        for (char c = '1'; c <= '9'; c++) {
-            intDFA.addTransition(0, c, 1);
-        }
-        intDFA.addTransition(0, '0', 2);
-        for (char c = '0'; c <= '9'; c++) {
-            intDFA.addTransition(1, c, 1);
-        }
-        intDFA.addFinalState(1);
-        intDFA.addFinalState(2);
-        return intDFA;
-    }
-
-    private DFA buildDecimalDFA() {
-        DFA decimalDFA = new DFA(0);
-        for (char c = '1'; c <= '9'; c++) {
-            decimalDFA.addTransition(0, c, 1);
-        }
-        decimalDFA.addTransition(0, '0', 1);
-        for (char c = '0'; c <= '9'; c++) {
-            decimalDFA.addTransition(1, c, 1);
-        }
-        decimalDFA.addTransition(1, '.', 2);
-        for (char c = '0'; c <= '9'; c++) {
-            decimalDFA.addTransition(2, c, 3);
-            decimalDFA.addTransition(3, c, 4);
-            decimalDFA.addTransition(4, c, 5);
-            decimalDFA.addTransition(5, c, 6);
-            decimalDFA.addTransition(6, c, 7);
-        }
-        decimalDFA.addFinalState(3);
-        decimalDFA.addFinalState(4);
-        decimalDFA.addFinalState(5);
-        decimalDFA.addFinalState(6);
-        decimalDFA.addFinalState(7);
-        return decimalDFA;
-    }
-
-    private DFA buildCharDFA() {
-        DFA charDFA = new DFA(0);
-        charDFA.addTransition(0, '\'', 1); // Start of char literal
-        charDFA.addTransition(1, '\\', 2); // Escape sequence for char
-        for (char c = 32; c <= 126; c++) { // Printable characters (non-control)
-            charDFA.addTransition(1, c, 1); // Regular characters inside the char
-        }
-        charDFA.addTransition(2, '\'', 3); // Escape sequence for single quote
-        charDFA.addTransition(2, '\\', 2); // Escaped backslash
-        charDFA.addTransition(1, '\'', 4); // End of char literal
-        charDFA.addFinalState(4); // End of char literal
-
-        return charDFA;
-    }
-
-    private DFA buildStringDFA() {
-        DFA stringDFA = new DFA(0);
-        stringDFA.addTransition(0, '"', 1);  // Start string with "
-
-        // Allow all printable characters except for the ending quote (")
-        for (char c = 32; c <= 126; c++) {
-            if (c != '"') {  // Exclude the double quote to allow it only at the end
-                stringDFA.addTransition(1, c, 1);
-            }
-        }
-
-        stringDFA.addTransition(1, '"', 2); // End string with "
-        stringDFA.addFinalState(2);
-        return stringDFA;
-    }
-
-    private DFA buildBooleanDFA() {
-        DFA boolDFA = new DFA(0);
-        String[] booleans = {"true", "false"};
-        for (String word : booleans) {
-            int state = 0;
-            for (char c : word.toCharArray()) {
-                boolDFA.addTransition(state, c, state + 1);
-                state++;
-            }
-            boolDFA.addFinalState(state);
-        }
-        return boolDFA;
-    }
-
-    private DFA buildOperatorDFA() {
-        DFA operatorDFA = new DFA(0);
-        char[] singleOperators = {'+', '-', '*', '/', '%', '^', '='};
-        for (char op : singleOperators) {
-            operatorDFA.addTransition(0, op, 1);
-        }
-        operatorDFA.addFinalState(1);
-        return operatorDFA;
-    }
-
     // Updated analyzeToken method
-// Updated analyzeToken method
     public void analyzeToken(String token, int lineNumber) {
         // NEW: Check if the token represents a global variable (must start with '@')
         if (token.startsWith("@")) {

@@ -7,24 +7,19 @@ class RegexToDFAConverter {
     // Convert a regular expression to a DFA
     public DFA convertRegexToDFA(String regex) {
         NFA nfa = regexToNFA(regex);
-        DFA dfa = nfaToDFA(nfa);
-        System.out.println("Transition Table for " + regex + ":");
-        dfa.displayTable(); // Display the transition table for debugging
-        return dfa;
+        return nfaToDFA(nfa);
     }
 
     // Convert a regular expression to an NFA using Thompson's construction
     private NFA regexToNFA(String regex) {
         Stack<NFA> stack = new Stack<>();
-        System.out.println("Processing regex: " + regex);
 
         for (int i = 0; i < regex.length(); i++) {
             char c = regex.charAt(i);
-            System.out.println("Processing character: " + c);
 
             switch (c) {
                 case '[':
-                    // Handle character class (e.g., [a-z] or [^"])
+                    // Handle character class (e.g., [a-z])
                     i = processCharacterClass(regex, i, stack);
                     break;
                 case '*':
@@ -80,79 +75,19 @@ class RegexToDFAConverter {
         return stack.pop();
     }
 
-
-    // Process a character class (e.g., [a-z] or [^"])
+    // Process a character class (e.g., [a-z])
     private int processCharacterClass(String regex, int index, Stack<NFA> stack) {
         StringBuilder charClass = new StringBuilder();
         index++; // Move past the '['
-        boolean isNegated = false;
-
-        if (index < regex.length() && regex.charAt(index) == '^') {
-            isNegated = true;
-            index++;
-        }
-
         while (index < regex.length() && regex.charAt(index) != ']') {
             charClass.append(regex.charAt(index));
             index++;
         }
-
         if (index >= regex.length()) {
             throw new IllegalArgumentException("Invalid regex: Unclosed character class");
         }
-
-        stack.push(characterClassNFA(charClass.toString(), isNegated));
+        stack.push(characterClassNFA(charClass.toString()));
         return index;
-    }
-
-    // Create an NFA for a character class (e.g., [a-z] or [^"])
-    private NFA characterClassNFA(String charClass, boolean isNegated) {
-        NFA result = null;
-        for (int i = 0; i < charClass.length(); i++) {
-            char c = charClass.charAt(i);
-            if (i + 2 < charClass.length() && charClass.charAt(i + 1) == '-') {
-                // Handle ranges (e.g., a-z)
-                char start = c;
-                char end = charClass.charAt(i + 2);
-                for (char ch = start; ch <= end; ch++) {
-                    NFA singleCharNFA = singleCharNFA(ch);
-                    result = (result == null) ? singleCharNFA : union(result, singleCharNFA);
-                }
-                i += 2; // Skip the range characters
-            } else {
-                // Single character
-                NFA singleCharNFA = singleCharNFA(c);
-                result = (result == null) ? singleCharNFA : union(result, singleCharNFA);
-            }
-        }
-
-        if (isNegated) {
-            // Negate the character class
-            NFA allCharsNFA = allCharsNFA();
-            result = difference(allCharsNFA, result);
-        }
-
-        return result;
-    }
-
-    // Create an NFA that matches any character
-    private NFA allCharsNFA() {
-        NFA nfa = new NFA(new State(State.getNextId()), new HashSet<>());
-        State endState = new State(State.getNextId());
-        endState.isFinal = true;
-
-        for (char c = 0; c < 128; c++) { // ASCII range
-            nfa.startState.addTransition(c, endState);
-        }
-
-        nfa.finalStates.add(endState);
-        return nfa;
-    }
-
-    // Create an NFA that matches the difference between two NFAs
-    private NFA difference(NFA nfa1, NFA nfa2) {
-        // Implement difference operation (e.g., using complement and intersection)
-        throw new UnsupportedOperationException("Difference operation not implemented yet");
     }
 
     // Process a group (e.g., (true|false))
