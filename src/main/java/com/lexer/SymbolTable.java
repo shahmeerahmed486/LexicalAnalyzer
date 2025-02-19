@@ -20,12 +20,6 @@ public class SymbolTable {
         }
     }
 
-    // Lookup a symbol by its name and scope
-    public Symbol lookup(String name, String scope) {
-        String key = generateKey(name, scope);
-        return table.get(key);
-    }
-
     // Check if a symbol exists by name and scope
     public boolean exists(String name, String scope) {
         String key = generateKey(name, scope);
