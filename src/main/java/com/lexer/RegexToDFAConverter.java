@@ -8,8 +8,10 @@ class RegexToDFAConverter {
     public DFA convertRegexToDFA(String regex) {
         NFA nfa = regexToNFA(regex);
         DFA dfa = nfaToDFA(nfa);
-        System.out.println("Transition Table for " + regex + ":");
-        dfa.displayTable();
+        if(regex!="\"[^\"]*\"") {
+            System.out.println("Transition Table for " + regex + ":");
+            dfa.displayTable();
+        }
         return dfa;
     }
 
