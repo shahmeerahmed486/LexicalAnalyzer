@@ -13,6 +13,7 @@ def int main() {
     deci num = 5.5563218;
     deci ra = square(num);
     deci rb = half(ra);
+    bool check=false;
     out(rb);
 
     // Using char and string

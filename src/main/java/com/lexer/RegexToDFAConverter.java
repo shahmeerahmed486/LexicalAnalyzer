@@ -184,7 +184,15 @@ class RegexToDFAConverter {
 
 
     private NFA characterClassNFA(String charClass) {
+        boolean isNegated = false;
+        if (charClass.startsWith("^")) {
+            isNegated = true;
+            charClass = charClass.substring(1); // Remove the '^' symbol
+        }
+
         NFA result = null;
+        Set<Character> includedChars = new HashSet<>();
+
         for (int i = 0; i < charClass.length(); i++) {
             char c = charClass.charAt(i);
             if (i + 2 < charClass.length() && charClass.charAt(i + 1) == '-') {
@@ -192,16 +200,30 @@ class RegexToDFAConverter {
                 char start = c;
                 char end = charClass.charAt(i + 2);
                 for (char ch = start; ch <= end; ch++) {
-                    NFA singleCharNFA = singleCharNFA(ch);
-                    result = (result == null) ? singleCharNFA : union(result, singleCharNFA);
+                    includedChars.add(ch);
                 }
                 i += 2; // Skip the range characters
             } else {
+                includedChars.add(c);
+            }
+        }
 
-                NFA singleCharNFA = singleCharNFA(c);
+        if (isNegated) {
+            // Create an NFA that accepts any character except the ones in includedChars
+            for (char ch = 32; ch <= 126; ch++) { // ASCII printable range
+                if (!includedChars.contains(ch)) {
+                    NFA singleCharNFA = singleCharNFA(ch);
+                    result = (result == null) ? singleCharNFA : union(result, singleCharNFA);
+                }
+            }
+        } else {
+            // Create an NFA for only the included characters
+            for (char ch : includedChars) {
+                NFA singleCharNFA = singleCharNFA(ch);
                 result = (result == null) ? singleCharNFA : union(result, singleCharNFA);
             }
         }
+
         return result;
     }
 
