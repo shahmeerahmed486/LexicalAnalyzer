@@ -1,0 +1,21 @@
+/* errors.xcl - Test file with lexical errors */
+
+// Invalid decimal: missing digit after the dot
+deci invalidDecimal = 5.;
+
+// Unclosed string literal
+str unclosedString = "This string is not terminated;
+
+// Unclosed multi-line comment
+
+
+// Invalid global identifier (should start with a lowercase letter)
+@1invalidGlobal;
+
+// Invalid char literal: contains more than one character
+char wrongChar = 'AB';
+
+// Unrecognized token: '~' is not supported by any regex
+int tildeTest = 7 ~ 3;
+/*
+This comment is never closed

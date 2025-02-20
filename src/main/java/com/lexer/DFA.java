@@ -15,7 +15,7 @@ class DFA {
         this.finalStates = new HashSet<>();
     }
 
-    // Add a transition (currentState, inputChar) -> nextState
+    // (currentState, inputChar) -> nextState
     public void addTransition(int currentState, char inputChar, int nextState) {
         String key = currentState + "," + inputChar;
         transitionTable.put(key, nextState);
@@ -49,12 +49,18 @@ class DFA {
         return finalStates.contains(currentState); // Return true if final state reached
     }
 
-    // Display transition table for debugging
+
     public void displayTable() {
         System.out.println("Transition Table:");
         System.out.println("------------------");
         System.out.println("Current State | Input | Next State");
-        for (Map.Entry<String, Integer> entry : transitionTable.entrySet()) {
+
+        // Extract transitions and sort by current state
+        List<Map.Entry<String, Integer>> sortedEntries = new ArrayList<>(transitionTable.entrySet());
+        sortedEntries.sort(Comparator.comparingInt(entry -> Integer.parseInt(entry.getKey().split(",")[0])));
+
+        // Print the sorted transition table
+        for (Map.Entry<String, Integer> entry : sortedEntries) {
             System.out.println(entry.getKey().replace(",", "      |   ") + "   |   " + entry.getValue());
         }
     }

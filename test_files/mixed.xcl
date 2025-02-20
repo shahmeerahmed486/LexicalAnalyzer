@@ -1,0 +1,25 @@
+/* mixed.xcl - Test file with mixed valid and error tokens */
+
+int validInt = 123;
+deci validDec = 45.67;
+char validChar = 'X';
+str validStr = "Test string";
+bool validBool = false;
+
+@validGlobal = 99;
+
+// Error cases below:
+// Malformed decimal (missing digit after '.')
+deci invalidDec = 9.;
+
+// Unclosed string literal
+str brokenStr = "Broken string;
+
+// Invalid char literal (more than one character)
+char invalidChar = 'XY';
+
+def int add(int a, int b) {
+    return a + b;
+}
+
+out(add(validInt, 10));

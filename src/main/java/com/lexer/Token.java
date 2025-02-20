@@ -1,9 +1,9 @@
 package com.lexer;
 
 public class Token {
-    private String type;   // Token type (e.g., IDENTIFIER, INTEGER, OPERATOR)
-    private String value;  // Actual token value (e.g., "x", "5", "+")
-    private int lineNumber; // Line number for error handling
+    private String type;
+    private String value;
+    private int lineNumber;
 
     public Token(String type, String value, int lineNumber) {
         this.type = type;
