@@ -1,6 +1,6 @@
 char letter = 'A';  // Example char variable
 str message = "Hello, World!";  // Example string variable
-
+bool he = true;
 def deci square(deci x) {
     return x * x;
 }
@@ -10,7 +10,7 @@ def deci half(deci x) {
 }
 
 def int main() {
-    deci num = 5.5;
+    deci num = 5.5563218;
     deci ra = square(num);
     deci rb = half(ra);
     out(rb);

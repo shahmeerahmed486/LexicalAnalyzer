@@ -3,8 +3,8 @@ package com.lexer;
 public class Symbol {
     private String name;
     private String type;
-    private String scope;  // "global" or "local"
-    private String value;  // Optional: for constants
+    private String scope;
+    private String value;
 
     public Symbol(String name, String type, String scope, String value) {
         this.name = name;

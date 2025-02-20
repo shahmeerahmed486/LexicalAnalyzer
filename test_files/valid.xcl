@@ -1,0 +1,26 @@
+/* valid.xcl - Test file with all valid tokens */
+
+int counter = 10;
+deci pi = 3.14159;
+char letter = 'A';
+str greeting = "Hello, world!";
+bool flag = true;
+
+def int factorial(deci n) {
+    if n == 0 {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+def deci square(deci x) {
+    return x * x;
+}
+
+def int main() {
+    deci result = square(pi);
+    out(result);
+    out(greeting);
+    out(@greeting);  // Using a global identifier
+    return 0;
+}
