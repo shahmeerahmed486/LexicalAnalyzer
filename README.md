@@ -1,4 +1,5 @@
-**Lexical Analyzer**This project implements a lexical analyzer in Java that tokenizes source code written in a custom language. The analyzer uses deterministic finite automata (DFAs) generated from regular expressions to identify tokens, builds a symbol table for variable and function declarations, and integrates error handling to report lexical errors.
+**Lexical Analyzer**
+This project implements a lexical analyzer in Java that tokenizes source code written in a custom language. The analyzer uses deterministic finite automata (DFAs) generated from regular expressions to identify tokens, builds a symbol table for variable and function declarations, and integrates error handling to report lexical errors.
 
 **Overview**
 The lexical analyzer reads a source file (with a .xcl extension) and breaks the input into tokens such as identifiers, integers, decimals, characters, strings, booleans, operators, and symbols. It also distinguishes between global and local variables and supports function definitions. The analyzer was developed with the following key constraints:
@@ -12,20 +13,25 @@ Character: Single letters and digits enclosed in single quotes.
 Identifiers:
 
 Only lowercase letters (a to z) are recognized as valid variable names.
+
 **Arithmetic Operations:**
 
 Basic operators such as addition (+), subtraction (-), multiplication (*), division (/), and remainder/modulus (%) are supported.
+
 **Variables and Scope:**
 
 Global variables are accessed with the @ prefix.
 Local variables and function parameters are managed using a symbol table.
+
 **Comments and Whitespaces:**
 
 The analyzer ignores extra spaces.
 It correctly handles single-line (//) and multi-line (/* ... */) comments, even in complex situations.
+
 **State Transition Visualization:**
 
 The system includes functionality to display the DFA transition state table for debugging purposes.
+
 **Code Structure**
 The project is organized into several Java classes, each responsible for a specific aspect of the lexical analysis:
 
